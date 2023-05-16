@@ -1,20 +1,28 @@
-import functools
-
+import os
+import model
+from flask import Flask
 from flask import (
-    Blueprint, flash, g, redirect, render_template, request, session, url_for
+    session, url_for, request, redirect, render_template, g, flash
 )
-from werkzeug.security import check_password_hash, generate_password_hash
+from jinja2 import StrictUndefined
 
-from flaskr.db import get_db
+app = Flask(__name__, instance_relative_config=True)
+app.config.from_mapping(
+    SECRET_KEY='dev',
+    DATABASE=os.path.join(app.instance_path, 'flaskr.sqlite'),
+)
+app.jinja_env.undefined = StrictUndefined
 
-bp = Blueprint('auth', __name__, url_prefix='/auth')
+# a simple page that says hello
+@app.route('/hello')
+def hello():
+    return 'Hello, World!'
 
-@bp.route('/register', methods=('GET', 'POST'))
+@app.route('/register', methods=('GET', 'POST'))
 def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        db = get_db()
         error = None
 
         if not username:
@@ -24,30 +32,24 @@ def register():
 
         if error is None:
             try:
-                db.execute(
-                    "INSERT INTO users (username, password) VALUES (?, ?)",
-                    (username, generate_password_hash(password)),
-                )
-                db.commit()
-            except db.IntegrityError:
+                model.db.session.add(model.User.create(username, password))
+                model.db.session.commit()
+            except IntegrityError:
                 error = f"User {username} is already registered."
             else:
-                return redirect(url_for("auth.login"))
+                return redirect(url_for("login"))
 
         flash(error)
 
-    return render_template('auth/register.html')
+    return render_template('register.html')
 
-@bp.route('/login', methods=('GET', 'POST'))
+@app.route('/login', methods=('GET', 'POST'))
 def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        db = get_db()
         error = None
-        user = db.execute(
-            'SELECT * FROM users WHERE username = ?', (username,)
-        ).fetchone()
+        user = model.User.get_by_username(username)
 
         if user is None:
             error = 'Incorrect username.'
@@ -61,22 +63,20 @@ def login():
 
         flash(error)
 
-    return render_template('auth/login.html')
+    return render_template('login.html')
 
 
-@bp.before_app_request
+@app.before_request
 def load_logged_in_user():
     user_id = session.get('user_id')
 
     if user_id is None:
         g.user = None
     else:
-        g.user = get_db().execute(
-            'SELECT * FROM users WHERE id = ?', (user_id,)
-        ).fetchone()
+        g.user = model.User.get_by_id(user_id)
 
 
-@bp.route('/logout')
+@app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('index'))
@@ -86,8 +86,13 @@ def login_required(view):
     @functools.wraps(view)
     def wrapped_view(**kwargs):
         if g.user is None:
-            return redirect(url_for('auth.login'))
+            return redirect(url_for('login'))
 
         return view(**kwargs)
 
     return wrapped_view
+
+
+if __name__ == '__main__':
+    model.connect_to_db(app)
+    app.run(host='127.0.0.1', debug=True)
