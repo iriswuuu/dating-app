@@ -1,3 +1,5 @@
+"""Models for movie ratings app."""
+
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import backref
@@ -5,6 +7,7 @@ from sqlalchemy.orm import backref
 db = SQLAlchemy()
 
 class User(db.Model):
+    """A user."""
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -23,6 +26,7 @@ class User(db.Model):
 
     @classmethod
     def create(cls, username, password):
+      """Create and return a new user."""
       return cls(username=username, password=password)
 
     @classmethod
@@ -39,6 +43,7 @@ class User(db.Model):
 
 
 class UserProfile(db.Model):
+    """A user profile."""
     __tablename__ = "user_profile"
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -49,6 +54,7 @@ class UserProfile(db.Model):
 
 
 class Match(db.Model):
+    """A match between two users."""
     __tablename__ = "matches"
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -58,6 +64,7 @@ class Match(db.Model):
 
 
 class Like(db.Model):
+    """A user's like for another user."""
     __tablename__ = "likes"
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -67,6 +74,7 @@ class Like(db.Model):
 
 
 class Message(db.Model):
+    """A message between two users."""
     __tablename__ = "messages"
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -77,6 +85,7 @@ class Message(db.Model):
 
 
 def connect_to_db(flask_app, db_uri="postgresql:///matchmeet", echo=True):
+    """Connects to the database."""
     flask_app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
     flask_app.config['SQLALCHEMY_ECHO'] = echo
     flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
