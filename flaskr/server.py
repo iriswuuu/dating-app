@@ -4,8 +4,10 @@ import os
 import model
 from flask import Flask
 from flask import session, url_for, request, redirect, render_template, g, flash
+from sqlalchemy.exc import IntegrityError
 
 from jinja2 import StrictUndefined
+import functools
 
 app = Flask(__name__, instance_relative_config=True)
 app.config.from_mapping(
@@ -13,11 +15,6 @@ app.config.from_mapping(
     DATABASE=os.path.join(app.instance_path, 'flaskr.sqlite'),
 )
 app.jinja_env.undefined = StrictUndefined
-
-"""A simple page that says hello."""
-@app.route('/')
-def hello():
-    return 'Hello, World!'
 
 @app.route('/register', methods=('GET', 'POST'))
 def register():
@@ -38,8 +35,8 @@ def register():
             except IntegrityError:
                 error = f"User {username} is already registered."
             else:
-                 """Redirect to the login page after successful registration."""
-                return redirect(url_for("login"))
+                """Redirect to the login page after successful registration."""
+                return redirect(url_for('login'))
 
         flash(error)
 
@@ -55,13 +52,13 @@ def login():
 
         if user is None:
             error = 'Incorrect username.'
-        elif not check_password_hash(user['password'], password):
+        elif user.password != password:
             error = 'Incorrect password.'
 
         if error is None:
             """Store the user ID in the session to keep the user logged in."""
             session.clear()
-            session['user_id'] = user['id']
+            session['user_id'] = user.id
             return redirect(url_for('index'))
 
         flash(error)
@@ -84,7 +81,7 @@ def load_logged_in_user():
 def logout():
     """Clear the session to log the user out."""
     session.clear()
-    return redirect(url_for('index'))
+    return redirect(url_for('login'))
 
 
 def login_required(view):
@@ -97,6 +94,42 @@ def login_required(view):
         return view(**kwargs)
 
     return wrapped_view
+
+
+@app.route('/')
+@login_required
+def index():
+    name = 'John Doe'
+    age = 25
+    gender = 'male'
+    interests = 'Sports, Music, Travel'
+    description = 'I am very rich.'
+    profileUrl = '../static/eg-profile-photo.jpg'
+    return render_template('index.html', name=name, age=age, gender=gender, interests=interests, description=description, profileUrl=profileUrl)
+
+
+@app.route('/settings')
+@login_required
+def settings():
+    name = 'John Doe'
+    age = 25
+    gender = 'male'
+    interests = 'Sports, Music, Travel'
+    description = 'I am very rich.'
+    profileUrl = '../static/eg-profile-photo.jpg'
+    return render_template('index.html', name=name, age=age, gender=gender, interests=interests, description=description, profileUrl=profileUrl)
+
+
+@app.route('/profile')
+@login_required
+def profile():
+    name = 'John Doe'
+    age = 25
+    gender = 'male'
+    interests = 'Sports, Music, Travel'
+    description = 'I am very rich.'
+    profileUrl = '../static/eg-profile-photo.jpg'
+    return render_template('index.html', name=name, age=age, gender=gender, interests=interests, description=description, profileUrl=profileUrl)
 
 
 if __name__ == '__main__':
