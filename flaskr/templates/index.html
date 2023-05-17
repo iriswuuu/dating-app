@@ -1,0 +1,19 @@
+{% extends 'base.html' %} {% block header %}
+<div class="profile-container">
+  <img src="{{profileUrl}}" alt="Profile Image" class="profile-img" />
+  <div class="profile-info">
+    <h2>{{name}}</h3>
+    <p>{{age}} | {{gender}}</p>
+  </div>
+  <div class="profile-description">
+    <p>{{description}}</p>
+  </div>
+  <div class="profile-interests">
+    <p>Interests: {{interests}}</p>
+  </div>
+  <div>
+    <button class="btn btn-success round-button">Like</button>
+    <button class="btn btn-danger round-button">Dislike</button>
+  </div>
+</div>
+{% endblock %}

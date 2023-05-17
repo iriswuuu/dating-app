@@ -11,10 +11,19 @@
       integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ"
       crossorigin="anonymous"
     />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      href="{{ url_for('static', filename='favicon.ico') }}"
+    />
   </head>
   <nav class="navbar navbar-expand-lg bg-body-tertiary">
     <div class="container-fluid">
-      <a class="navbar-brand" href="#">MatchMeet</a>
+      <a class="navbar-brand" href="{{ url_for('index') }}">MatchMeet</a>
       <button
         class="navbar-toggler"
         type="button"
@@ -30,13 +39,17 @@
         <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
           {% if g.user %}
           <li class="nav-item me-2">
-            <a class="nav-link active" href="{{ url_for('profile') }}">{{ g.user['username'] }} Profile</span>
+            <a class="nav-link active" href="{{ url_for('profile') }}"
+              >{{ g.user['username'] }}'s Profile</a
+            >
           </li>
           <li class="nav-item me-2">
-            <a class="nav-link active" href="{{ url_for('settings') }}">Settings</span>
+            <a class="nav-link active" href="{{ url_for('settings') }}"
+              >Settings</a
+            >
           </li>
           <li class="nav-item me-2">
-            <a class="nav-link active" href="{{ url_for('auth.logout') }}"
+            <a class="nav-link active" href="{{ url_for('logout') }}"
               >Log Out</a
             >
           </li>
@@ -47,9 +60,7 @@
             >
           </li>
           <li class="nav-item me-2">
-            <a class="nav-link active" href="{{ url_for('login') }}"
-              >Log In</a
-            >
+            <a class="nav-link active" href="{{ url_for('login') }}">Log In</a>
           </li>
           {% endif %}
         </ul>

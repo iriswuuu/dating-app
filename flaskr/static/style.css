@@ -1,10 +1,38 @@
-html {
-  font-family: sans-serif;
-  background: #eee;
-  padding: 1rem;
+.profile-container {
+  max-width: 600px;
+  margin: auto;
+  padding: 20px;
+  text-align: center;
 }
-body {
-  max-width: 960px;
-  margin: 0 auto;
-  background: white;
+
+.profile-img {
+  width: 400px;
+  height: 400px;
+  object-fit: cover;
+  border-radius: 50%;
+  margin-bottom: 20px;
+}
+
+.profile-info {
+  font-size: 20px;
+  margin-bottom: 20px;
+}
+
+.profile-description {
+  font-size: 20px;
+  margin-bottom: 20px;
+}
+
+.profile-interests {
+  font-size: 15px;
+  margin-bottom: 20px;
+}
+
+.round-button {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  font-size: 15px;
+  margin-right: 30px;
+  margin-left: 30px;
 }
