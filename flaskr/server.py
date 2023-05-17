@@ -1,9 +1,10 @@
+"""Server for dating app."""
+
 import os
 import model
 from flask import Flask
-from flask import (
-    session, url_for, request, redirect, render_template, g, flash
-)
+from flask import session, url_for, request, redirect, render_template, g, flash
+
 from jinja2 import StrictUndefined
 
 app = Flask(__name__, instance_relative_config=True)
@@ -13,8 +14,8 @@ app.config.from_mapping(
 )
 app.jinja_env.undefined = StrictUndefined
 
-# a simple page that says hello
-@app.route('/hello')
+"""A simple page that says hello."""
+@app.route('/')
 def hello():
     return 'Hello, World!'
 
@@ -29,14 +30,15 @@ def register():
             error = 'Username is required.'
         elif not password:
             error = 'Password is required.'
-
         if error is None:
             try:
+                """Add a new user to the database."""
                 model.db.session.add(model.User.create(username, password))
                 model.db.session.commit()
             except IntegrityError:
                 error = f"User {username} is already registered."
             else:
+                 """Redirect to the login page after successful registration."""
                 return redirect(url_for("login"))
 
         flash(error)
@@ -57,6 +59,7 @@ def login():
             error = 'Incorrect password.'
 
         if error is None:
+            """Store the user ID in the session to keep the user logged in."""
             session.clear()
             session['user_id'] = user['id']
             return redirect(url_for('index'))
@@ -73,11 +76,13 @@ def load_logged_in_user():
     if user_id is None:
         g.user = None
     else:
+        """Load the user object from the database based on the user ID stored in the session."""
         g.user = model.User.get_by_id(user_id)
 
 
 @app.route('/logout')
 def logout():
+    """Clear the session to log the user out."""
     session.clear()
     return redirect(url_for('index'))
 
@@ -86,6 +91,7 @@ def login_required(view):
     @functools.wraps(view)
     def wrapped_view(**kwargs):
         if g.user is None:
+            """Redirect to the login page if the user is not logged in."""
             return redirect(url_for('login'))
 
         return view(**kwargs)
@@ -94,5 +100,6 @@ def login_required(view):
 
 
 if __name__ == '__main__':
+    """Connect to the database."""
     model.connect_to_db(app)
     app.run(host='127.0.0.1', debug=True)
