@@ -2,8 +2,9 @@
 
 import os
 import model
+from datetime import datetime
 from flask import Flask
-from flask import session, url_for, request, redirect, render_template, g, flash
+from flask import jsonify, session, url_for, request, redirect, render_template, g, flash
 from sqlalchemy.exc import IntegrityError
 
 from jinja2 import StrictUndefined
@@ -32,8 +33,21 @@ def register():
                 """Add a new user to the database."""
                 model.db.session.add(model.User.create(username, password))
                 model.db.session.commit()
-            except IntegrityError:
+                user = model.User.get_by_username(username)
+
+                model.db.session.add(model.UserProfile.create(user.id))
+                model.db.session.commit()
+
+                profile = model.UserProfile.get_by_user_id(user.id)
+                profile.photo = '../static/unkown_user.png'
+                user.profile = profile.id
+                model.db.session.add(user)
+                model.db.session.add(profile)
+                model.db.session.commit()
+
+            except IntegrityError as e:
                 error = f"User {username} is already registered."
+                print(e)
             else:
                 """Redirect to the login page after successful registration."""
                 return redirect(url_for('login'))
@@ -105,7 +119,7 @@ def index():
     interests = 'Sports, Music, Travel'
     description = 'I am very rich.'
     profileUrl = '../static/eg-profile-photo.jpg'
-    return render_template('index.html', name=name, age=age, gender=gender, interests=interests, description=description, profileUrl=profileUrl)
+    return render_template('match.html', name=name, age=age, gender=gender, interests=interests, description=description, profileUrl=profileUrl)
 
 
 @app.route('/settings')
@@ -117,20 +131,47 @@ def settings():
     interests = 'Sports, Music, Travel'
     description = 'I am very rich.'
     profileUrl = '../static/eg-profile-photo.jpg'
-    return render_template('index.html', name=name, age=age, gender=gender, interests=interests, description=description, profileUrl=profileUrl)
+    return render_template('match.html', name=name, age=age, gender=gender, interests=interests, description=description, profileUrl=profileUrl)
 
 
-@app.route('/profile')
+@app.route('/profile/<user_id>', methods=['GET'])
 @login_required
-def profile():
-    name = 'John Doe'
-    age = 25
-    gender = 'male'
-    interests = 'Sports, Music, Travel'
-    description = 'I am very rich.'
-    profileUrl = '../static/eg-profile-photo.jpg'
-    return render_template('index.html', name=name, age=age, gender=gender, interests=interests, description=description, profileUrl=profileUrl)
+def profile(user_id):
+    profile = model.UserProfile.get_by_user_id(user_id)
+    name = f'{profile.firstname} {profile.lastname}'
 
+    current_date = datetime.now()
+
+    if profile.birthday:
+        age = current_date.year - profile.birthday.year
+
+        if current_date.month < profile.birthday.month or (current_date.month == profile.birthday.month and current_date.day < profile.birthday.day):
+            age -= 1
+    else:
+        age = None
+
+    gender = profile.gender
+    interests = None if not profile.interests else ','.join(profile.interests)
+    description = profile.description
+    profileUrl = profile.photo
+    return render_template('profile.html', name=name, age=age, gender=gender, interests=interests, description=description, profileUrl=profileUrl)
+
+# Restful APIs
+@app.route('/api/profile/userid/<id>', methods=['GET'])
+def get_user_profile(id):
+    profile = model.UserProfile.get_by_user_id(id)
+    return jsonify(profile)
+
+@app.route('/api/user/<id>', methods=['GET'])
+def get_user(id):
+    user = model.User.get_by_id(id)
+    del user.password
+    return jsonify(user)
+
+@app.route('/api/profile/<id>', methods=['POST'])
+def update_user_profile(id):
+    profile = model.UserProfile.get_by_user_id(id)
+    return jsonify(profile)
 
 if __name__ == '__main__':
     """Connect to the database."""

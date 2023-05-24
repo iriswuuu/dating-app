@@ -39,7 +39,9 @@
         <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
           {% if g.user %}
           <li class="nav-item me-2">
-            <a class="nav-link active" href="{{ url_for('profile') }}"
+            <a
+              class="nav-link active"
+              href="{{ url_for('profile', user_id=g.user['id']) }}"
               >{{ g.user['username'] }}'s Profile</a
             >
           </li>

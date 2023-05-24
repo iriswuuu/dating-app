@@ -3,6 +3,8 @@
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy import create_engine
+from sqlalchemy_utils import database_exists, create_database
 
 db = SQLAlchemy()
 
@@ -48,6 +50,8 @@ class UserProfile(db.Model):
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.Integer, nullable=False)
+    firstname = db.Column(db.String(64), nullable=True)
+    lastname = db.Column(db.String(64), nullable=True)
     birthday = db.Column(db.DateTime, nullable=True)
     gender = db.Column(db.Integer, nullable=True)
     photo = db.Column(db.String(255), nullable=True)
@@ -55,8 +59,17 @@ class UserProfile(db.Model):
     interests = db.Column(ARRAY(db.String(255)))
 
     @classmethod
+    def create(cls, user_id):
+      """Create and return a new user profile."""
+      return cls(user_id=user_id)
+
+    @classmethod
     def get_by_id(cls, id):
       return cls.query.get(id)
+    
+    @classmethod
+    def get_by_user_id(cls, user_id):
+      return cls.query.filter(UserProfile.user_id == user_id).first()
 
 
 class Match(db.Model):
@@ -90,8 +103,19 @@ class Message(db.Model):
     send_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
 
+def validate_database(db_uri):
+     engine = create_engine(db_uri)
+     if not database_exists(engine.url): # Checks for the first time  
+         create_database(engine.url)     # Create new DB    
+         print("New Database Created" + str(database_exists(engine.url))) # Verifies if database is there or not.
+     else:
+         print("Database Already Exists")
+
+
 def connect_to_db(flask_app, db_uri="postgresql:///matchmeet", echo=True):
     """Connects to the database."""
+    validate_database(db_uri)
+
     flask_app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
     flask_app.config['SQLALCHEMY_ECHO'] = echo
     flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False

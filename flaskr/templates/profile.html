@@ -1,0 +1,59 @@
+{% extends 'base.html' %} {% block header %}
+<div class="container">
+  <div class="row">
+    <div class="col-md-4">
+      <img src="{{ profile.photo }}" alt="Profile" class="img-fluid rounded-circle">
+      {% if isCurrentUser %}
+      <button class="btn btn-primary mt-2">Upload Photo</button>
+      {% endif %}
+    </div>
+    <div class="col-md-8">
+      <h2>个人资料</h2>
+      <form>
+        <div class="form-group">
+          <label for="firstname">Firstname:</label>
+          <input type="text" class="form-control" id="firstname" value="{{ profile.firstname }}" {% if not isCurrentUser %}readonly{% endif %}>
+        </div>
+        <div class="form-group">
+          <label for="lastname">Lastname:</label>
+          <input type="text" class="form-control" id="lastname" value="{{ profile.lastname }}" {% if not isCurrentUser %}readonly{% endif %}>
+        </div>
+        <div class="form-group">
+          <label>Birthday:</label>
+          <input type="date" class="form-control" value="{{ profile.birthday.strftime('%Y-%m-%d') }}" {% if not isCurrentUser %}readonly{% endif %}>
+        </div>
+        <div class="form-group">
+          <label for="gender">Gender:</label>
+          <select class="form-control" id="gender" {% if not isCurrentUser %}disabled{% endif %}>
+            <option value="0" {% if profile.gender == 0 %}selected{% endif %}>Male</option>
+            <option value="1" {% if profile.gender == 1 %}selected{% endif %}>Female</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="description">Description:</label>
+          <input type="text" class="form-control" id="description" value="{{ profile.description }}" {% if not isCurrentUser %}readonly{% endif %}>
+        </div>
+        <div class="form-group">
+          <label>Interests:</label>
+          {% for interest in profile.interests %}
+          <div class="input-group mb-2">
+            <input type="text" class="form-control" name="interest" value="{{ interest }}" {% if not isCurrentUser %}readonly{% endif %}>
+            {% if isCurrentUser %}
+            <div class="input-group-append">
+              <button class="btn btn-danger remove-interest-btn" type="button">-</button>
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+          {% if isCurrentUser %}
+          <button class="btn btn-primary add-interest-btn" type="button">+</button>
+          <button class="btn btn-primary minus-interest-btn" type="button">-</button>
+          {% endif %}
+        </div>
+        {% if isCurrentUser %}
+        <button class="btn btn-primary" style="display: block;">Submit</button>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+{% endblock %}
