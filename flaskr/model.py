@@ -1,4 +1,4 @@
-"""Models for movie ratings app."""
+"""Models for dating app."""
 
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
@@ -25,6 +25,7 @@ class User(db.Model):
     users_seen = db.Column(ARRAY(db.Integer), nullable=True)
 
     def __repr__(self):
+      """Return a string representation of the User object."""
       return f'<User with id {self.id}>'
 
     @classmethod
@@ -32,16 +33,19 @@ class User(db.Model):
       """Create and return a new user."""
       return cls(username=username, password=password)
 
-    @classmethod
+    @classmethod 
     def get_by_id(cls, id):
+      """Get a user by their ID."""
       return cls.query.get(id)
 
     @classmethod
     def get_by_username(cls, username):
+      """Get a user by their username."""
       return cls.query.filter(User.username == username).first()
 
     @classmethod
     def get_by_email(cls, email):
+      """Get a user by their email."""
       return cls.query.filter(User.email == email).first()
 
 
@@ -66,14 +70,17 @@ class UserProfile(db.Model):
 
     @classmethod
     def get_by_id(cls, id):
+      """Get a user profile by its ID."""
       return cls.query.get(id)
     
     @classmethod
     def get_by_user_id(cls, user_id):
+      """Get a user profile by the user ID."""
       return cls.query.filter(UserProfile.user_id == user_id).first()
     
     @classmethod
     def get_one_with_explicit_out_user_list(cls, explicit_out_list):
+      """Get a user profile that is not in the explicit out list."""
       return cls.query.filter(~UserProfile.user_id.in_(explicit_out_list)).first()
 
 
@@ -109,6 +116,7 @@ class Message(db.Model):
 
 
 def validate_database(db_uri):
+     """Validates the existence of a database and creates a new one if it doesn't exist."""
      engine = create_engine(db_uri)
      if not database_exists(engine.url): # Checks for the first time  
          create_database(engine.url)     # Create new DB    

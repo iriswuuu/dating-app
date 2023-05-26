@@ -24,6 +24,7 @@ app.config['UPLOAD_FOLDER'] = os.path.join(current_dir, 'static', 'photos')
 
 @app.route('/register', methods=('GET', 'POST'))
 def register():
+    """Register route for user registration. Handles both GET and POST requests."""
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -47,7 +48,7 @@ def register():
                 profile.photo = '../static/unkown_user.png'
                 profile.firstname = 'Firstname'
                 profile.lastname = 'Lastname'
-                profile.birthday = datetime(1900, 1, 1)
+                profile.birthday = datetime(1900, 1, 1) # Default birthday
                 profile.description = ''
                 profile.interests = []
                 profile.gender = 0
@@ -100,6 +101,9 @@ def login():
 
 @app.before_request
 def load_logged_in_user():
+    """Load the logged-in user before each request.
+    Retrieves the user ID from the session and loads the corresponding user object from the database.
+    """
     user_id = session.get('user_id')
 
     if user_id is None:
@@ -111,12 +115,15 @@ def load_logged_in_user():
 
 @app.route('/logout')
 def logout():
-    """Clear the session to log the user out."""
+    """Logout route for clearing the session and logging out the user."""
     session.clear()
     return redirect(url_for('login'))
 
 
 def login_required(view):
+    """Decorator to require login for accessing a view.
+    If the user is not logged in, it redirects to the login page.
+    """
     @functools.wraps(view)
     def wrapped_view(**kwargs):
         if g.user is None:
@@ -131,6 +138,10 @@ def login_required(view):
 @app.route('/')
 @login_required
 def index():
+    """Homepage route.
+    Displays a random user profile to the logged-in user. 
+    If there are no more profiles to display, it renders a rest.html template.
+    """
     current_user = model.User.get_by_id(session['user_id'])
     users_seen = current_user.users_seen if current_user.users_seen else []
     users_seen.append(current_user.id)
@@ -157,6 +168,14 @@ def index():
 @app.route('/user/like/<user_id>', methods=['POST'])
 @login_required
 def like_user(user_id):
+    """Like a user.
+
+    Adds the liked user to the current user's likes sent and the liked user's likes received.
+    If there is a mutual like (both users have liked each other), it adds a match between them.
+    The user who receives the like is also added to the current user's list of seen users.
+
+    """
+
     current_user = model.User.get_by_id(session['user_id'])
     target_user = model.User.get_by_id(user_id)
 
@@ -180,6 +199,9 @@ def like_user(user_id):
 @app.route('/user/dislike/<user_id>', methods=['POST'])
 @login_required
 def dislike_user(user_id):
+    """Dislike a user.
+    Adds the disliked user to the current user's list of seen users.
+    """
     current_user = model.User.get_by_id(session['user_id'])
     target_user = model.User.get_by_id(user_id)
     current_user.users_seen.append(target_user.id)
@@ -191,6 +213,7 @@ def dislike_user(user_id):
 @app.route('/settings')
 @login_required
 def settings():
+    """Render the settings page."""
     name = 'John Doe'
     age = 25
     gender = 'male'
@@ -203,14 +226,22 @@ def settings():
 @app.route('/profile/<user_id>', methods=['GET'])
 @login_required
 def profile(user_id):
+    """Render the user's profile page."""
     profile = model.UserProfile.get_by_user_id(user_id)
     isCurrentUser = str(user_id) == str(session['user_id'])
     print(profile.birthday)
     return render_template('profile.html', profile=profile, isCurrentUser=isCurrentUser)
 
+
 @app.route('/profile/<user_id>/photo', methods=['POST'])
 @login_required
 def photo_upload(user_id):
+    """Upload a user's profile photo.
+
+    Saves the uploaded file, resizes and crops it, updates the user's profile with the photo URL,
+    and commits the changes to the database.
+
+    """
     if 'file' not in request.files:
         abort(400, 'No file uploaded')
 
@@ -242,6 +273,7 @@ def photo_upload(user_id):
     return redirect(url_for('profile', user_id=user_id))
 
 def allowed_file_size(file):
+    """Check if the uploaded file size is within the limit."""
     max_size = 20 * 1024 * 1024  # 20MB
     return len(file.read()) <= max_size
 
@@ -249,6 +281,12 @@ def allowed_file_size(file):
 @app.route('/profile/<user_id>', methods=['POST'])
 @login_required
 def profile_update(user_id):
+    """Update a user's profile.
+
+    Retrieves the form data, converts the birthday string to a datetime object,
+    updates the user's profile with the new data, and commits the changes to the database.
+
+    """
     birthday = request.form['birthday']
     date_obj = datetime.strptime(birthday, "%Y-%m-%d")
 
@@ -268,18 +306,39 @@ def profile_update(user_id):
 # Restful APIs
 @app.route('/api/profile/userid/<id>', methods=['GET'])
 def get_user_profile(id):
+    """Retrieve a user's profile based on the user ID."""
     profile = model.UserProfile.get_by_user_id(id)
     return jsonify(profile)
 
+
 @app.route('/api/user/<id>', methods=['GET'])
 def get_user(id):
+    """Retrieve a user's information based on the user ID."""
     user = model.User.get_by_id(id)
     del user.password
     return jsonify(user)
 
+
 @app.route('/api/profile/<id>', methods=['POST'])
 def update_user_profile(id):
+    """Update a user's profile."""
     profile = model.UserProfile.get_by_user_id(id)
+    # Update the profile attributes based on the request data
+    if 'firstname' in request.json:
+        profile.firstname = request.json['firstname']
+    if 'lastname' in request.json:
+        profile.lastname = request.json['lastname']
+    if 'gender' in request.json:
+        profile.gender = request.json['gender']
+    if 'description' in request.json:
+        profile.description = request.json['description']
+    if 'birthday' in request.json:
+        birthday = request.json['birthday']
+        date_obj = datetime.strptime(birthday, "%Y-%m-%d")
+        profile.birthday = date_obj
+
+    model.db.session.commit()
+
     return jsonify(profile)
 
 if __name__ == '__main__':
