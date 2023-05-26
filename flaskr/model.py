@@ -17,11 +17,12 @@ class User(db.Model):
     password = db.Column(db.String(128), nullable=False)
     email = db.Column(db.String(120), unique=True)
     profile = db.Column(db.Integer, nullable=True, unique=True)
-    matches = db.Column(ARRAY(db.Integer), nullable=True, unique=True)
-    likes_sent = db.Column(ARRAY(db.Integer), nullable=True, unique=True)
-    likes_received = db.Column(ARRAY(db.Integer), nullable=True, unique=True)
-    messages_sent = db.Column(ARRAY(db.Integer), nullable=True, unique=True)
-    messages_received = db.Column(ARRAY(db.Integer), nullable=True, unique=True)
+    matches = db.Column(ARRAY(db.Integer), nullable=True)
+    likes_sent = db.Column(ARRAY(db.Integer), nullable=True)
+    likes_received = db.Column(ARRAY(db.Integer), nullable=True)
+    messages_sent = db.Column(ARRAY(db.Integer), nullable=True)
+    messages_received = db.Column(ARRAY(db.Integer), nullable=True)
+    users_seen = db.Column(ARRAY(db.Integer), nullable=True)
 
     def __repr__(self):
       return f'<User with id {self.id}>'
@@ -70,6 +71,10 @@ class UserProfile(db.Model):
     @classmethod
     def get_by_user_id(cls, user_id):
       return cls.query.filter(UserProfile.user_id == user_id).first()
+    
+    @classmethod
+    def get_one_with_explicit_out_user_list(cls, explicit_out_list):
+      return cls.query.filter(~UserProfile.user_id.in_(explicit_out_list)).first()
 
 
 class Match(db.Model):

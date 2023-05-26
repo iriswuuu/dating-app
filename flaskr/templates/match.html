@@ -1,6 +1,6 @@
 {% extends 'base.html' %} {% block header %}
-<div class="profile-container">
-  <img src="{{profileUrl}}" alt="Profile Image" class="profile-img" />
+<div class="profile-container container">
+  <img src="{{profile_photo}}" alt="Profile Image" class="profile-img" />
   <div class="profile-info">
     <h2>{{name}}</h3>
     <p>{{age}} | {{gender}}</p>
@@ -11,9 +11,18 @@
   <div class="profile-interests">
     <p>Interests: {{interests}}</p>
   </div>
-  <div>
-    <button class="btn btn-success round-button">Like</button>
-    <button class="btn btn-danger round-button">Dislike</button>
+  <div class="row">
+    <div class="col text-left">
+      <form action="{{url_for('like_user', user_id=profile_user_id)}}" method="post">
+        <button class="btn btn-success round-button">Like</button>
+      </form>
+    </div>
+    <div class="col text-right">
+      <form action="{{url_for('dislike_user', user_id=profile_user_id)}}" method="post">
+        <button class="btn btn-danger round-button">Dislike</button>
+      </form>
+    </div>
+
   </div>
 </div>
 {% endblock %}

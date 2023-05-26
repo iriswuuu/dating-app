@@ -1,39 +1,42 @@
 {% extends 'base.html' %} {% block header %}
 <div class="container">
   <div class="row">
-    <div class="col-md-4">
+    <div class="col-md-4 d-flex flex-column align-items-center">
       <img src="{{ profile.photo }}" alt="Profile" class="img-fluid rounded-circle">
       {% if isCurrentUser %}
-      <button class="btn btn-primary mt-2">Upload Photo</button>
+      <form method="POST" enctype="multipart/form-data" action="{{ url_for('photo_upload', user_id=g.user['id']) }}">
+          <input type="file" name="file">
+          <button class="btn btn-primary mt-2" type="submit">Upload Photo</button>
+      </form>
       {% endif %}
     </div>
     <div class="col-md-8">
-      <h2>个人资料</h2>
-      <form>
+      <h2>User Profile</h2>
+      <form method="POST" action="{{ url_for('profile_update', user_id=g.user['id']) }}">
         <div class="form-group">
           <label for="firstname">Firstname:</label>
-          <input type="text" class="form-control" id="firstname" value="{{ profile.firstname }}" {% if not isCurrentUser %}readonly{% endif %}>
+          <input name="firstname" type="text" class="form-control" id="firstname" value="{{ profile.firstname }}" {% if not isCurrentUser %}readonly{% endif %}>
         </div>
         <div class="form-group">
           <label for="lastname">Lastname:</label>
-          <input type="text" class="form-control" id="lastname" value="{{ profile.lastname }}" {% if not isCurrentUser %}readonly{% endif %}>
+          <input name="lastname" type="text" class="form-control" id="lastname" value="{{ profile.lastname }}" {% if not isCurrentUser %}readonly{% endif %}>
         </div>
         <div class="form-group">
           <label>Birthday:</label>
-          <input type="date" class="form-control" value="{{ profile.birthday.strftime('%Y-%m-%d') }}" {% if not isCurrentUser %}readonly{% endif %}>
+          <input name="birthday" id="birthday" type="date" class="form-control" value="{{ profile.birthday.strftime('%Y-%m-%d') }}" {% if not isCurrentUser %}readonly{% endif %}>
         </div>
         <div class="form-group">
           <label for="gender">Gender:</label>
-          <select class="form-control" id="gender" {% if not isCurrentUser %}disabled{% endif %}>
+          <select name="gender" class="form-control" id="gender" {% if not isCurrentUser %}disabled{% endif %}>
             <option value="0" {% if profile.gender == 0 %}selected{% endif %}>Male</option>
             <option value="1" {% if profile.gender == 1 %}selected{% endif %}>Female</option>
           </select>
         </div>
         <div class="form-group">
           <label for="description">Description:</label>
-          <input type="text" class="form-control" id="description" value="{{ profile.description }}" {% if not isCurrentUser %}readonly{% endif %}>
+          <input name="description" type="text" class="form-control" id="description" value="{{ profile.description }}" {% if not isCurrentUser %}readonly{% endif %}>
         </div>
-        <div class="form-group">
+        <!-- <div class="form-group">
           <label>Interests:</label>
           {% for interest in profile.interests %}
           <div class="input-group mb-2">
@@ -49,9 +52,9 @@
           <button class="btn btn-primary add-interest-btn" type="button">+</button>
           <button class="btn btn-primary minus-interest-btn" type="button">-</button>
           {% endif %}
-        </div>
+        </div> -->
         {% if isCurrentUser %}
-        <button class="btn btn-primary" style="display: block;">Submit</button>
+        <button class="btn btn-primary mt-2" style="display: block;">Submit</button>
         {% endif %}
       </form>
     </div>
