@@ -4,9 +4,11 @@ import os
 import model
 from datetime import datetime
 import uuid
+import json
 from flask import Flask
 from flask import abort, jsonify, session, url_for, request, redirect, render_template, g, flash
 from sqlalchemy.exc import IntegrityError
+from flask_socketio import SocketIO
 from PIL import Image
 
 from jinja2 import StrictUndefined
@@ -21,6 +23,8 @@ app.jinja_env.undefined = StrictUndefined
 app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024
 current_dir = os.path.dirname(os.path.abspath(__file__))
 app.config['UPLOAD_FOLDER'] = os.path.join(current_dir, 'static', 'photos')
+app.config['SECRET_KEY'] = 'somesecretkey#'
+socketio = SocketIO(app)
 
 @app.route('/register', methods=('GET', 'POST'))
 def register():
@@ -59,8 +63,6 @@ def register():
                 user.messages_sent = []
                 user.messages_received = []
                 user.users_seen = []
-                model.db.session.add(user)
-                model.db.session.add(profile)
                 model.db.session.commit()
 
             except IntegrityError as e:
@@ -143,7 +145,7 @@ def index():
     If there are no more profiles to display, it renders a rest.html template.
     """
     current_user = model.User.get_by_id(session['user_id'])
-    users_seen = current_user.users_seen if current_user.users_seen else []
+    users_seen = current_user.users_seen
     users_seen.append(current_user.id)
 
     random_profile = model.UserProfile.get_one_with_explicit_out_user_list(users_seen)
@@ -179,19 +181,35 @@ def like_user(user_id):
     current_user = model.User.get_by_id(session['user_id'])
     target_user = model.User.get_by_id(user_id)
 
-    current_user.likes_sent.append(target_user.id)
-    target_user.likes_received.append(current_user.id)
+    current_user_users_seen = current_user.users_seen
+    current_user_likes_sent = current_user.likes_sent
+    target_user_likes_received = target_user.likes_received
+    current_user_likes_sent.append(target_user.id)
+    target_user_likes_received.append(current_user.id)
+    current_user_users_seen.append(target_user.id)
 
-    if target_user.id in current_user.likes_received:
-        current_user.matches.append(target_user.id)
-        target_user.matches.append(current_user.id)
-    
-    current_user.users_seen.append(target_user.id)
-    # print(current_user.users_seen)
-    # print(target_user.users_seen)
-    # model.db.session.add(current_user)
-    # model.db.session.add(target_user)
+    current_user.likes_sent = None
+    target_user.likes_received = None
+    current_user.users_seen = None
     model.db.session.commit()
+
+    current_user.likes_sent = current_user_likes_sent
+    target_user.likes_received = target_user_likes_received
+    current_user.users_seen = current_user_users_seen
+    model.db.session.commit()
+
+    if current_user.id in target_user.likes_sent:
+        current_user_matches = current_user.matches
+        target_user_matches = target_user.matches
+        current_user_matches.append(target_user.id)
+        target_user_matches.append(current_user.id)
+        current_user.matches = None
+        target_user.matches = None
+        model.db.session.commit()
+
+        current_user.matches = current_user_matches
+        target_user.matches = target_user_matches
+        model.db.session.commit()
 
     return redirect(url_for('index'))
 
@@ -204,9 +222,13 @@ def dislike_user(user_id):
     """
     current_user = model.User.get_by_id(session['user_id'])
     target_user = model.User.get_by_id(user_id)
-    current_user.users_seen.append(target_user.id)
 
-    model.db.session.add(current_user)
+    current_user_users_seen = current_user.users_seen
+    current_user.users_seen = None
+    model.db.session.commit()
+
+    current_user_users_seen.append(target_user.id)
+    current_user.users_seen = current_user_users_seen
     model.db.session.commit()
     return redirect(url_for('index'))
 
@@ -219,7 +241,7 @@ def settings():
     gender = 'male'
     interests = 'Sports, Music, Travel'
     description = 'I am very rich.'
-    profileUrl = '../static/eg-profile-photo.jpg'
+    profileUrl = 'eg-profile-photo.jpg'
     return render_template('match.html', profile_user_id=12, name=name, age=age, gender=gender, interests=interests, description=description, profile_photo=profileUrl)
 
 
@@ -229,7 +251,6 @@ def profile(user_id):
     """Render the user's profile page."""
     profile = model.UserProfile.get_by_user_id(user_id)
     isCurrentUser = str(user_id) == str(session['user_id'])
-    print(profile.birthday)
     return render_template('profile.html', profile=profile, isCurrentUser=isCurrentUser)
 
 
@@ -259,12 +280,19 @@ def photo_upload(user_id):
     file.save(save_path)
 
     image = Image.open(save_path)
-    cropped_image = image.resize((500, 500))
+    width, height = image.size
+    #crop to 500*500
+    left = (width - 500) // 2
+    top = (height - 500) // 2
+    right = left + 500
+    bottom = top + 500
+
+    cropped_image = image.crop((left, top, right, bottom))
     cropped_filename = filename + '_cropped' + extension
     cropped_save_path = os.path.join(app.config['UPLOAD_FOLDER'], cropped_filename)
     cropped_image.save(cropped_save_path)
 
-    photo_url = f'../static/photos/{cropped_filename}'
+    photo_url = f'{cropped_filename}'
     profile = model.UserProfile.get_by_user_id(user_id)
     profile.photo = photo_url
 
@@ -302,6 +330,51 @@ def profile_update(user_id):
 
     return redirect(url_for('profile', user_id=user_id))
 
+
+@app.route('/chat', methods=['GET', 'POST'])
+@login_required
+def chat():
+    user_id = session.get('user_id')
+    user = model.User.get_by_id(user_id)
+    matches = user.matches
+    user_profiles = model.UserProfile.get_with_user_ids(matches)
+    messages_sent = model.Message.get_message_as_sender(user_id)
+    messages_received = model.Message.get_message_receiver(user_id)
+
+    message_by_friend_id = {}
+    for message in messages_sent:
+        if not message_by_friend_id[message.receiver_id]:
+            message_by_friend_id[message.receiver_id] = []
+        message_by_friend_id[message.receiver_id].append(message)
+    
+    for message in messages_received:
+        if not message_by_friend_id[message.sender_id]:
+            message_by_friend_id[message.sender_id] = []
+        message_by_friend_id[message.sender_id].append(message)
+
+    message_by_friend_id_str = json.dumps(message_by_friend_id)
+    return render_template('chat.html',
+                           friends=user_profiles,
+                           message_by_friend_id_str=message_by_friend_id_str)
+
+@socketio.on('message')
+def handle_message(data):
+    message = data['message']
+    timestamp = data['timestamp']
+    model.db.session.add(model.Message.create(
+        int(data['sender']),
+        session.get('user_id'),
+        message,
+        timestamp
+    ))
+    model.db.session.commit()
+    sender_profile = model.UserProfile.get_by_user_id(data['sender'])
+
+    socketio.emit('reply', {
+        'message': message,
+        'timestamp': timestamp,
+        'name': f'{sender_profile.firstname} {sender_profile.lastname}' if sender_profile.user_id != session.get('user_id') else 'Me'
+    })
 
 # Restful APIs
 @app.route('/api/profile/userid/<id>', methods=['GET'])
@@ -341,7 +414,46 @@ def update_user_profile(id):
 
     return jsonify(profile)
 
+def setup_testuser(test_user):
+    model.db.session.add(model.User.create(test_user['username'], test_user['password']))
+    model.db.session.commit()
+    user = model.User.get_by_username(test_user['username'])
+
+    model.db.session.add(model.UserProfile.create(user.id))
+    model.db.session.commit()
+
+    profile = model.UserProfile.get_by_user_id(user.id)
+    profile.photo = test_user['photo']
+    profile.firstname = test_user['firstname']
+    profile.lastname = test_user['lastname']
+    profile.birthday = datetime(test_user['birth_year'], test_user['birth_mon'], test_user['birth_day'])
+    profile.description = test_user['description']
+    profile.interests = []
+    profile.gender = test_user['gender']
+    user.profile = profile.id
+    user.matches = []
+    user.likes_sent = []
+    user.likes_received = []
+    user.messages_sent = []
+    user.messages_received = []
+    user.users_seen = []
+    model.db.session.commit()
+
+@app.route('/test_users', methods=['GET'])
+def setup_test_users():
+    data = {}
+    try:
+        with app.open_resource("static/data.json") as file:
+            data = json.load(file)
+    except FileNotFoundError:
+        pass
+    for test_user in data:
+        setup_testuser(test_user)
+    session.clear()
+    return redirect(url_for('login'))
+
 if __name__ == '__main__':
     """Connect to the database."""
     model.connect_to_db(app)
-    app.run(host='127.0.0.1', debug=True)
+    socketio.run(app, host='127.0.0.1', debug=True)
+

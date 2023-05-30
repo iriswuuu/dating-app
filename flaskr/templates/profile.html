@@ -2,7 +2,7 @@
 <div class="container">
   <div class="row">
     <div class="col-md-4 d-flex flex-column align-items-center">
-      <img src="{{ profile.photo }}" alt="Profile" class="img-fluid rounded-circle">
+      <img src="{{url_for('static', filename='photos/' + profile.photo)}}" alt="Profile" class="img-fluid rounded-circle">
       {% if isCurrentUser %}
       <form method="POST" enctype="multipart/form-data" action="{{ url_for('photo_upload', user_id=g.user['id']) }}">
           <input type="file" name="file">

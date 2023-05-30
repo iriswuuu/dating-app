@@ -1,15 +1,17 @@
 {% extends 'base.html' %} {% block header %}
 <div class="profile-container container">
-  <img src="{{profile_photo}}" alt="Profile Image" class="profile-img" />
+  <img src="{{url_for('static', filename='photos/' + profile_photo)}}" alt="Profile Image" class="profile-img" />
   <div class="profile-info">
     <h2>{{name}}</h3>
-    <p>{{age}} | {{gender}}</p>
+    <p>Age: {{age}} | Gender: {{gender}}</p>
   </div>
   <div class="profile-description">
     <p>{{description}}</p>
   </div>
   <div class="profile-interests">
-    <p>Interests: {{interests}}</p>
+    {% if interests %}
+    <p>Interests:{{interests}}</p>
+    {% endif %}
   </div>
   <div class="row">
     <div class="col text-left">

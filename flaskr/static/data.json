@@ -1,0 +1,86 @@
+[
+    {
+      "username": "elena",
+      "password": "1234",
+      "firstname": "Elena",
+      "lastname": "Salvatore",
+      "photo": "ElenaSalvatore.jpeg",
+      "gender": 1,
+      "description": "A star student. I am popular, sporty, smart, compassionate, empathetic, caring and friendly. I could be very vulnerable and a damsel in distress.",
+      "birth_year": 1992,
+      "birth_mon": 6,
+      "birth_day": 22
+    },
+    {
+      "username": "katherine",
+      "password": "1234",
+      "firstname": "Katherine",
+      "lastname": "Pierce",
+      "photo": "KatherinePierce.jpeg",
+      "gender": 1,
+      "description": "Born Katerina Petrova (Bulgarian: Катерина Петрова) I was a witch of the Traveler sub-culture and a former main character of The Vampire Diaries. I was also the second-known Petrova Doppelgänger of Amara and a former vampire.",
+      "birth_year": 1473,
+      "birth_mon": 6,
+      "birth_day": 5
+    },
+    {
+      "username": "amara",
+      "password": "1234",
+      "firstname": "Amara",
+      "lastname": "Petrova",
+      "photo": "AmaraPetrova.jpeg",
+      "gender": 1,
+      "description": "I was the world's very first immortal woman. I was once the personal handmaiden of powerful witch Qetsiyah and the soulmate and one true love of Qetsiyah's fiancé, one of the world's most powerful witches and the world's first immortal man and being, Silas.",
+      "birth_year": 1,
+      "birth_mon": 1,
+      "birth_day": 1
+    },
+    {
+      "username": "stefan",
+      "password": "1234",
+      "firstname": "Stefan",
+      "lastname": "Salvatore",
+      "photo": "StefanSalvatore.jpeg",
+      "gender": 0,
+      "description": "I was a cured vampire and the distant descendant and doppelgänger of Silas. I was born and raised in the supernatural town of Mystic Falls, Virginia and came of age during the time of the Civil War. I was the youngest child of Giuseppe Salvatore and Lillian Salvatore.",
+      "birth_year": 1846,
+      "birth_mon": 11,
+      "birth_day": 1
+    },
+    {
+      "username": "damon",
+      "password": "1234",
+      "firstname": "Damon",
+      "lastname": "Salvatore",
+      "photo": "DamonSalvatore.jpeg",
+      "gender": 0,
+      "description": "I was a vampire and distant descendant of Silas. Since my younger brother, Stefan Salvatore, injected me with the Cure, I am now human. I was born in 1839 and lived in the colonial town of Mystic Falls. I became a vampire in 1864. At the time of his return to Mystic Falls, me and Stefan hadn't seen each other in fifteen years due to our bitter and violent relationship.",
+      "birth_year": 1839,
+      "birth_mon": 6,
+      "birth_day": 18
+    },
+    {
+      "username": "bonnie",
+      "password": "1234",
+      "firstname": "Bonnie",
+      "lastname": "Bennett",
+      "photo": "BonnieBennett.jpeg",
+      "gender": 0,
+      "description": "I am a very powerful witch. While I filled the role of counselor and confidante to all of my friends, I am a feisty, yet empathetic witch. I discovered my powers just in time to help out her family and friends.",
+      "birth_year": 1993,
+      "birth_mon": 2,
+      "birth_day": 5
+    },
+    {
+      "username": "caroline",
+      "password": "1234",
+      "firstname": "Caroline",
+      "lastname": "Forbes",
+      "photo": "CarolineForbes.jpeg",
+      "gender": 0,
+      "description": "I am the daughter of William Forbes II and Sheriff Elizabeth Forbes, the wife of the late Stefan Salvatore and the sister-in-law of Damon Salvatore and Elena Gilbert. Prior to my transition into a vampire, I was known for my insecurities, which caused me to be excessively competitive, mainly with Elena.",
+      "birth_year": 1992,
+      "birth_mon": 10,
+      "birth_day": 10
+    }
+  ]

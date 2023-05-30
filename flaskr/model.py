@@ -20,8 +20,6 @@ class User(db.Model):
     matches = db.Column(ARRAY(db.Integer), nullable=True)
     likes_sent = db.Column(ARRAY(db.Integer), nullable=True)
     likes_received = db.Column(ARRAY(db.Integer), nullable=True)
-    messages_sent = db.Column(ARRAY(db.Integer), nullable=True)
-    messages_received = db.Column(ARRAY(db.Integer), nullable=True)
     users_seen = db.Column(ARRAY(db.Integer), nullable=True)
 
     def __repr__(self):
@@ -48,6 +46,10 @@ class User(db.Model):
       """Get a user by their email."""
       return cls.query.filter(User.email == email).first()
 
+    @classmethod
+    def get_all(cls, ids):
+       return cls.query.filter(User.id.in_(ids)).all()
+
 
 class UserProfile(db.Model):
     """A user profile."""
@@ -60,7 +62,7 @@ class UserProfile(db.Model):
     birthday = db.Column(db.DateTime, nullable=True)
     gender = db.Column(db.Integer, nullable=True)
     photo = db.Column(db.String(255), nullable=True)
-    description = db.Column(db.String(255))
+    description = db.Column(db.Text)
     interests = db.Column(ARRAY(db.String(255)))
 
     @classmethod
@@ -82,26 +84,10 @@ class UserProfile(db.Model):
     def get_one_with_explicit_out_user_list(cls, explicit_out_list):
       """Get a user profile that is not in the explicit out list."""
       return cls.query.filter(~UserProfile.user_id.in_(explicit_out_list)).first()
-
-
-class Match(db.Model):
-    """A match between two users."""
-    __tablename__ = "matches"
-
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id_1 = db.Column(db.Integer, nullable=False)
-    user_id_2 = db.Column(db.Integer, nullable=False)
-    match_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-
-
-class Like(db.Model):
-    """A user's like for another user."""
-    __tablename__ = "likes"
-
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id_1 = db.Column(db.Integer, nullable=False)
-    user_id_2 = db.Column(db.Integer, nullable=False)
-    match_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    
+    @classmethod
+    def get_with_user_ids(cls, user_ids):
+       return cls.query.filter(UserProfile.user_id.in_(user_ids)).all()
 
 
 class Message(db.Model):
@@ -112,7 +98,20 @@ class Message(db.Model):
     sender_id = db.Column(db.Integer, nullable=False)
     receiver_id = db.Column(db.Integer, nullable=False)
     message = db.Column(db.Text, nullable=False)
-    send_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    send_time = db.Column(db.BigInteger, nullable=False)
+
+    @classmethod
+    def create(cls, sender_id, receiver_id, message, send_time):
+      """Create and return a new user profile."""
+      return cls(sender_id=sender_id, receiver_id=receiver_id, message=message, send_time=send_time)
+
+    @classmethod
+    def get_message_as_sender(cls, user_id):
+       return cls.query.filter(Message.sender_id == user_id).all()
+    
+    @classmethod
+    def get_message_receiver(cls, user_id):
+       return cls.query.filter(Message.receiver_id == user_id).all()
 
 
 def validate_database(db_uri):
