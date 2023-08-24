@@ -19,6 +19,16 @@ app.config.from_mapping(
     SECRET_KEY='dev',
     DATABASE=os.path.join(app.instance_path, 'flaskr.sqlite'),
 )
+"""
+Overview of Dating App Configuration.
+
+This Flask application is configured for a dating app. It sets up the necessary configurations
+such as the secret key, database path, instance path, and static file locations.
+
+    SECRET_KEY (str): A secret key used for securely signing the session cookie.
+    DATABASE (str): The path to the SQLite database file.
+    UPLOAD_FOLDER (str): The path to the folder where uploaded photos will be stored.
+"""
 app.jinja_env.undefined = StrictUndefined
 app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -26,9 +36,21 @@ app.config['UPLOAD_FOLDER'] = os.path.join(current_dir, 'static', 'photos')
 app.config['SECRET_KEY'] = 'somesecretkey#'
 socketio = SocketIO(app)
 
+
 @app.route('/register', methods=('GET', 'POST'))
 def register():
-    """Register route for user registration. Handles both GET and POST requests."""
+    """Register route for user registration. Handles both GET and POST requests.
+    
+    This route allows users to register by submitting a registration form. It handles
+    both GET and POST requests. For GET requests, it renders the registration form.
+    For POST requests, it processes the form data, validates it, and creates a new user
+    in the database if the data is valid.
+
+    Returns:
+        If the registration is successful, the function redirects the user to the login page.
+        If there are validation errors or registration fails, the user is redirected back to
+        the registration form, and an error message is displayed.
+    """
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -69,7 +91,7 @@ def register():
                 error = f"User {username} is already registered."
                 print(e)
             else:
-                """Redirect to the login page after successful registration."""
+                # Redirect to the login page after successful registration.
                 flash('Registered successfully.')
                 return redirect(url_for('login'))
 
@@ -77,8 +99,21 @@ def register():
 
     return render_template('register.html')
 
+
 @app.route('/login', methods=('GET', 'POST'))
 def login():
+    """Login route for user authentication. Handles both GET and POST requests.
+
+    This route allows users to log in by submitting a login form. It handles both GET
+    and POST requests. For GET requests, it renders the login form. For POST requests,
+    it processes the form data, validates the credentials, and logs the user in if the
+    credentials are correct.
+
+    Returns:
+        If the login is successful, the function redirects the user to the index page.
+        If the credentials are incorrect or login fails, the user is redirected back to
+        the login form, and an error message is displayed.
+    """
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -104,6 +139,7 @@ def login():
 @app.before_request
 def load_logged_in_user():
     """Load the logged-in user before each request.
+
     Retrieves the user ID from the session and loads the corresponding user object from the database.
     """
     user_id = session.get('user_id')
@@ -111,7 +147,7 @@ def load_logged_in_user():
     if user_id is None:
         g.user = None
     else:
-        """Load the user object from the database based on the user ID stored in the session."""
+        # Load the user object from the database based on the user ID stored in the session.
         g.user = model.User.get_by_id(user_id)
 
 
@@ -124,12 +160,13 @@ def logout():
 
 def login_required(view):
     """Decorator to require login for accessing a view.
+
     If the user is not logged in, it redirects to the login page.
     """
     @functools.wraps(view)
     def wrapped_view(**kwargs):
         if g.user is None:
-            """Redirect to the login page if the user is not logged in."""
+            # Redirect to the login page if the user is not logged in.
             return redirect(url_for('login'))
 
         return view(**kwargs)
@@ -141,7 +178,10 @@ def login_required(view):
 @login_required
 def index():
     """Homepage route.
+
     Displays a random user profile to the logged-in user. 
+    If there are more profiles to display, it renders the "match.html" template with
+        the details of the random user profile.
     If there are no more profiles to display, it renders a rest.html template.
     """
     current_user = model.User.get_by_id(session['user_id'])
@@ -175,7 +215,6 @@ def like_user(user_id):
     Adds the liked user to the current user's likes sent and the liked user's likes received.
     If there is a mutual like (both users have liked each other), it adds a match between them.
     The user who receives the like is also added to the current user's list of seen users.
-
     """
 
     current_user = model.User.get_by_id(session['user_id'])
@@ -218,6 +257,7 @@ def like_user(user_id):
 @login_required
 def dislike_user(user_id):
     """Dislike a user.
+    
     Adds the disliked user to the current user's list of seen users.
     """
     current_user = model.User.get_by_id(session['user_id'])
