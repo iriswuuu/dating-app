@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
+import json
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy import create_engine
 from sqlalchemy_utils import database_exists, create_database
@@ -112,7 +113,14 @@ class Message(db.Model):
     @classmethod
     def get_message_receiver(cls, user_id):
        return cls.query.filter(Message.receiver_id == user_id).all()
-
+    
+    def toJSON(self):
+        return {
+           "sender_id": self.sender_id,
+           "receiver_id": self.receiver_id,
+           "message": self.message,
+           "send_time": self.send_time
+        }
 
 def validate_database(db_uri):
      """Validates the existence of a database and creates a new one if it doesn't exist."""

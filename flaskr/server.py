@@ -8,7 +8,7 @@ import json
 from flask import Flask
 from flask import abort, jsonify, session, url_for, request, redirect, render_template, g, flash
 from sqlalchemy.exc import IntegrityError
-from flask_socketio import SocketIO
+from flask_socketio import join_room, leave_room, SocketIO, send
 from PIL import Image
 
 from jinja2 import StrictUndefined
@@ -370,51 +370,114 @@ def profile_update(user_id):
 
     return redirect(url_for('profile', user_id=user_id))
 
+rooms = {}
+
+@app.route("/room/<target>")
+def room(target):
+    room_number = '-'.join(sorted([str(target), session.get('user_id')]))
+    session['room'] = room_number
+    if room_number is None:
+        return redirect(url_for("index"))
+    if room_number not in rooms:
+        rooms[room_number] = {"members": 0, "messages": []}
+
+    return render_template("room.html", code=room, messages=rooms[room]["messages"])
+
+@socketio.on("message")
+def message(data):
+    room = session.get("room")
+    if room not in rooms:
+        return 
+    
+    content = {
+        "name": session.get("name"),
+        "message": data["data"]
+    }
+    send(content, to=room)
+    rooms[room]["messages"].append(content)
+    print(f"{session.get('name')} said: {data['data']}")
+
+@socketio.on("connect")
+def connect(auth):
+    room = session.get("room")
+    name = session.get("name")
+    if not room or not name:
+        return
+    if room not in rooms:
+        leave_room(room)
+        return
+    
+    join_room(room)
+    send({"name": name, "message": "has entered the room"}, to=room)
+    rooms[room]["members"] += 1
+    print(f"{name} joined room {room}")
+
+@socketio.on("disconnect")
+def disconnect():
+    room = session.get("room")
+    name = session.get("name")
+    leave_room(room)
+
+    if room in rooms:
+        rooms[room]["members"] -= 1
+        if rooms[room]["members"] <= 0:
+            del rooms[room]
+    
+    send({"name": name, "message": "has left the room"}, to=room)
+    print(f"{name} has left the room {room}")
 
 @app.route('/chat', methods=['GET', 'POST'])
 @login_required
 def chat():
+    if request.method == "POST":
+        room_num = request.form.get("name")
+        return redirect(url_for("room"))
+
+
     user_id = session.get('user_id')
     user = model.User.get_by_id(user_id)
     matches = user.matches
     user_profiles = model.UserProfile.get_with_user_ids(matches)
-    messages_sent = model.Message.get_message_as_sender(user_id)
-    messages_received = model.Message.get_message_receiver(user_id)
+    # messages_sent = model.Message.get_message_as_sender(user_id)
+    # messages_received = model.Message.get_message_receiver(user_id)
 
-    message_by_friend_id = {}
-    for message in messages_sent:
-        if not message_by_friend_id[message.receiver_id]:
-            message_by_friend_id[message.receiver_id] = []
-        message_by_friend_id[message.receiver_id].append(message)
+    # message_by_friend_id = {}
+    # for message in messages_sent:
+    #     if message.receiver_id not in message_by_friend_id:
+    #         message_by_friend_id[message.receiver_id] = []
+    #     message_by_friend_id[message.receiver_id].append(message.toJSON())
     
-    for message in messages_received:
-        if not message_by_friend_id[message.sender_id]:
-            message_by_friend_id[message.sender_id] = []
-        message_by_friend_id[message.sender_id].append(message)
+    # for message in messages_received:
+    #     if message.sender_id not in message_by_friend_id:
+    #         message_by_friend_id[message.sender_id] = []
+    #     message_by_friend_id[message.sender_id].append(message.toJSON())
 
-    message_by_friend_id_str = json.dumps(message_by_friend_id)
-    return render_template('chat.html',
-                           friends=user_profiles,
-                           message_by_friend_id_str=message_by_friend_id_str)
+    return render_template('chat.html', friends=user_profiles)
 
-@socketio.on('message')
-def handle_message(data):
-    message = data['message']
-    timestamp = data['timestamp']
-    model.db.session.add(model.Message.create(
-        int(data['sender']),
-        session.get('user_id'),
-        message,
-        timestamp
-    ))
-    model.db.session.commit()
-    sender_profile = model.UserProfile.get_by_user_id(data['sender'])
+# @socketio.on('message')
+# def handle_message(data):
+#     sender = data['sender']
+#     receiver = data['receiver']
+#     room_num = '-'.join(sorted([str(sender), str(receiver)]))
 
-    socketio.emit('reply', {
-        'message': message,
-        'timestamp': timestamp,
-        'name': f'{sender_profile.firstname} {sender_profile.lastname}' if sender_profile.user_id != session.get('user_id') else 'Me'
-    })
+#     message = data['message']
+#     timestamp = data['timestamp']
+#     model.db.session.add(model.Message.create(
+#         int(data['sender']),
+#         session.get('user_id'),
+#         message,
+#         timestamp
+#     ))
+#     model.db.session.commit()
+#     sender_profile = model.UserProfile.get_by_user_id(data['sender'])
+
+#     send({
+#         'message': message,
+#         'timestamp': timestamp,
+#         'name': f'{sender_profile.firstname} {sender_profile.lastname}'
+#     }, to=room_num)
+
+    #socketio.emit('reply', )
 
 # Restful APIs
 @app.route('/api/profile/userid/<id>', methods=['GET'])
@@ -491,6 +554,9 @@ def setup_test_users():
         setup_testuser(test_user)
     session.clear()
     return redirect(url_for('login'))
+
+
+
 
 if __name__ == '__main__':
     """Connect to the database."""
