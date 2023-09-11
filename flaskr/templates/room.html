@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %} {% block content %}
 <div class="message-box">
   <h2>Chat Room: {{code}}</h2>
   <div class="messages" id="messages"></div>
@@ -49,4 +49,4 @@
 <script type="text/javascript">
   createMessage('{{msg.name}}', '{{msg.message}}');
 </script>
-{% block header %} {% endblock %}
+{% endfor %} {% endblock %}

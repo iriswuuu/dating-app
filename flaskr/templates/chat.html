@@ -6,11 +6,11 @@
       <ul class="list-group" id="friend-list">
         {% for friend in friends %}
         <form method="post">
-            <button
+            <a
             type="submit"
             class="list-group-item"
             id="{{friend.user_id}}"
-            href="{{url_for('room',target=friend.user_id)}}"/>
+            href="{{ url_for('room', target=friend.user_id) }}"
         </form>
           {{friend['firstname']}} {{friend['lastname']}}
         </button>

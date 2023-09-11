@@ -8,7 +8,7 @@ import json
 from flask import Flask
 from flask import abort, jsonify, session, url_for, request, redirect, render_template, g, flash
 from sqlalchemy.exc import IntegrityError
-from flask_socketio import join_room, leave_room, SocketIO, send
+from flask_socketio import join_room, leave_room, send, SocketIO
 from PIL import Image
 
 from jinja2 import StrictUndefined
@@ -374,14 +374,14 @@ rooms = {}
 
 @app.route("/room/<target>")
 def room(target):
-    room_number = '-'.join(sorted([str(target), session.get('user_id')]))
+    room_number = '-'.join(sorted([str(target), str(session.get('user_id'))]))
     session['room'] = room_number
+    session["name"] = g.user.username
     if room_number is None:
         return redirect(url_for("index"))
     if room_number not in rooms:
         rooms[room_number] = {"members": 0, "messages": []}
-
-    return render_template("room.html", code=room, messages=rooms[room]["messages"])
+    return render_template("room.html", code=room_number, messages=rooms[room_number]["messages"])
 
 @socketio.on("message")
 def message(data):
